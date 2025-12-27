@@ -23,8 +23,8 @@ export default function TradingPlatformPage() {
     {
       icon: <Gift className="w-6 h-6" />,
       title: 'Welcome Bonus',
-      amount: '$100',
-      description: 'Get $100 bonus on your first deposit of $500 or more',
+      amount: '10%',
+      description: 'Get $100 bonus on your first deposit of $1000 or more',
       code: 'WELCOME100',
       color: 'from-emerald-500 to-green-600',
       bgColor: 'bg-emerald-500/10',
@@ -33,8 +33,8 @@ export default function TradingPlatformPage() {
     {
       icon: <Star className="w-6 h-6" />,
       title: 'Deposit Bonus',
-      amount: '50%',
-      description: 'Get 50% bonus on deposits up to $5,000',
+      amount: '4% to 6%',
+      description: 'Get 4% to 6% bonus on deposits up to $500',
       code: 'DEPOSIT50',
       color: 'from-cyan-500 to-blue-600',
       bgColor: 'bg-cyan-500/10',
@@ -53,8 +53,8 @@ export default function TradingPlatformPage() {
     {
       icon: <Users className="w-6 h-6" />,
       title: 'Referral Bonus',
-      amount: '$50',
-      description: 'Earn $50 for each friend you refer who deposits',
+      amount: '$25',
+      description: 'Earn $25 for each friend you refer who deposits 300$ or more',
       code: 'REFER50',
       color: 'from-orange-500 to-red-600',
       bgColor: 'bg-orange-500/10',
