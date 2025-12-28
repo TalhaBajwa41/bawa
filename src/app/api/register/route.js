@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-<<<<<<< HEAD
-import User from '
-import { connectDB } from '@/lib/db'; 
-=======
-import User from '/@models/User';
+import User from '@/models/User';
 import { connectDB } from '@/lib/db';
->>>>>>> 0bed144be8c563471dd8c9ef4597343eb578270c
 
 export async function POST(req) {
   try {
@@ -14,11 +9,18 @@ export async function POST(req) {
 
     const { name, email, password } = await req.json();
 
+    if (!name || !email || !password) {
+      return NextResponse.json(
+        { message: 'All fields are required' },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
         { message: 'User already exists' },
-        { status: 400 }
+        { status: 409 }
       );
     }
 
@@ -31,12 +33,12 @@ export async function POST(req) {
     });
 
     return NextResponse.json(
-      { message: 'User registered successfully' },
+      { message: 'Registration successful' },
       { status: 201 }
     );
   } catch (error) {
     return NextResponse.json(
-      { message: 'Server error', error: error.message },
+      { message: error.message },
       { status: 500 }
     );
   }
