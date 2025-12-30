@@ -15,6 +15,7 @@ import {
 export default function TradingAppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isUserOpen, setIsUserOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -121,12 +122,34 @@ export default function TradingAppHeader() {
               <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
             </button>
 
-            <button className="hidden sm:flex items-center space-x-2 px-3 py-2 text-slate-300 hover:bg-slate-800/50 rounded-lg">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <ChevronDown className="w-4 h-4" />
-            </button>
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setIsUserOpen(!isUserOpen)}
+                className="flex items-center space-x-2 px-3 py-2 text-slate-300 hover:bg-slate-800/50 rounded-lg"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+
+              {isUserOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-lg overflow-hidden z-50">
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    href="/withdrawal"
+                    className="block px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+                  >
+                    Withdrawal
+                  </Link>
+                </div>
+              )}
+            </div>
 
             <Link
               href="/deposit"

@@ -1,0 +1,14 @@
+import ProfileForm from "@/components/profile/ProfileForm";
+import AvatarUpload from "@/components/profile/AvatarUpload";
+import ProfileStats from "@/components/profile/ProfileStats";
+
+export default function ProfilePage() {
+  return (
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold">My Profile</h1>
+      <AvatarUpload />
+      <ProfileForm />
+      <ProfileStats />
+    </div>
+  );
+}

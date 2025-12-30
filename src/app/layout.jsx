@@ -27,6 +27,9 @@ export default function RootLayout({ children }) {
       >
         {children}
         <TradingAppHeader />
+         <main className="pt-20">
+          
+         </main>
         <TradingFooter />
       </body>
     </html>

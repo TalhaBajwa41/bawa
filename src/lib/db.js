@@ -1,54 +1,85 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error('❌ Please define MONGODB_URI in your .env.local file');
+  throw new Error("❌ Please define MONGODB_URI in your .env.local file");
 }
 
-// Cache the database connection
+// Global cache (important for Next.js hot reloads)
 let cached = global.mongoose;
 
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-export async function connectDB() {
-  // Return existing connection if available
+// Connect to MongoDB
+async function connectDB() {
   if (cached.conn) {
-    console.log('✅ Using cached database connection');
     return cached.conn;
   }
 
-  // Create new connection if promise doesn't exist
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false, // Disable mongoose buffering
-      maxPoolSize: 10, // Maximum number of connections
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s
-      socketTimeoutMS: 45000, // Close sockets after 45s
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     };
 
-    console.log('🔄 Creating new database connection...');
-    
-    cached.promise = mongoose.connect(MONGODB_URI, opts)
-      .then((mongoose) => {
-        console.log('✅ MongoDB Connected Successfully');
-        return mongoose;
+    cached.promise = mongoose
+      .connect(MONGODB_URI, opts)
+      .then((mongooseInstance) => {
+        console.log("✅ MongoDB Connected");
+        return mongooseInstance;
       })
-      .catch((error) => {
-        console.error('❌ MongoDB Connection Error:', error);
-        cached.promise = null; // Reset promise on error
-        throw error;
+      .catch((err) => {
+        console.error("❌ MongoDB Connection Error:", err);
+        cached.promise = null;
+        throw err;
       });
   }
 
-  try {
-    cached.conn = await cached.promise;
-  } catch (error) {
-    cached.promise = null;
-    throw error;
-  }
-
+  cached.conn = await cached.promise;
   return cached.conn;
 }
+
+// Unified DB helper (replaces mock db.query)
+const db = {
+  async connect() {
+    return connectDB();
+  },
+
+  /**
+   * Generic query helper
+   * @param {mongoose.Model} model - Mongoose model
+   * @param {string} action - find | findOne | create | update | delete
+   * @param {object} query - filter
+   * @param {object} data - payload/update
+   */
+  async query(model, action, query = {}, data = {}) {
+    await connectDB();
+
+    switch (action) {
+      case "find":
+        return model.find(query);
+
+      case "findOne":
+        return model.findOne(query);
+
+      case "create":
+        return model.create(data);
+
+      case "update":
+        return model.updateOne(query, data);
+
+      case "delete":
+        return model.deleteOne(query);
+
+      default:
+        throw new Error(`❌ Unsupported DB action: ${action}`);
+    }
+  },
+};
+
+export default db;
