@@ -1,16 +1,81 @@
 "use client"
 import React, { useState } from 'react';
-import { TrendingUp, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Shield, Chrome } from 'lucide-react';
+import { TrendingUp, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Shield, Chrome, AlertCircle } from 'lucide-react';
 
 export default function TradingLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleChange = (field) => (e) => {
+    setFormData({ ...formData, [field]: e.target.value });
+    setError(''); // Clear error when user types
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login submitted:', { email, password, rememberMe });
+    setError('');
+    setIsLoading(true);
+
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store token in localStorage if remember me is checked
+        if (rememberMe && data.token) {
+          localStorage.setItem('authToken', data.token);
+        }
+
+        // Store user data
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        // Show success message
+        console.log('Login successful:', data.user);
+        
+        // Redirect to home/dashboard page
+        // In a real Next.js app, use: router.push('/dashboard')
+        window.location.href = '/dashboard';
+        
+      } else {
+        setError(data.message || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = (provider) => {
+    console.log(`${provider} login clicked`);
+    // Implement OAuth login here
+    setError(`${provider} login is not yet implemented`);
   };
 
   return (
@@ -104,6 +169,14 @@ export default function TradingLoginPage() {
                 <p className="text-slate-400">Enter your credentials to access your account</p>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+              )}
+
               <div className="space-y-5">
                 {/* Email Input */}
                 <div className="space-y-2">
@@ -114,10 +187,11 @@ export default function TradingLoginPage() {
                       <Mail className="absolute left-4 w-5 h-5 text-slate-400 group-focus-within:text-emerald-400 transition-colors" />
                       <input
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        onChange={handleChange('email')}
                         placeholder="you@example.com"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-800 transition-all duration-200"
+                        disabled={isLoading}
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -132,14 +206,17 @@ export default function TradingLoginPage() {
                       <Lock className="absolute left-4 w-5 h-5 text-slate-400 group-focus-within:text-emerald-400 transition-colors" />
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        onChange={handleChange('password')}
                         placeholder="••••••••"
-                        className="w-full pl-12 pr-12 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-800 transition-all duration-200"
+                        disabled={isLoading}
+                        className="w-full pl-12 pr-12 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <button
+                        type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 text-slate-400 hover:text-white transition-colors"
+                        disabled={isLoading}
+                        className="absolute right-4 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -154,11 +231,16 @@ export default function TradingLoginPage() {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                      disabled={isLoading}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer disabled:opacity-50"
                     />
                     <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
                   </label>
-                  <button className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+                  <button 
+                    type="button"
+                    onClick={() => console.log('Forgot password clicked')}
+                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                  >
                     Forgot Password?
                   </button>
                 </div>
@@ -166,11 +248,25 @@ export default function TradingLoginPage() {
                 {/* Submit Button */}
                 <button
                   onClick={handleSubmit}
-                  className="group relative w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl overflow-hidden hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300"
+                  disabled={isLoading}
+                  className="group relative w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl overflow-hidden hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="relative z-10 flex items-center justify-center">
-                    Sign In to Your Account
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Signing In...
+                      </>
+                    ) : (
+                      <>
+                        Sign In to Your Account
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <link rel="stylesheet" href="dashboard" />
+                      </>
+                    )}
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
@@ -188,11 +284,19 @@ export default function TradingLoginPage() {
 
               {/* Social Login */}
               <div className="grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all duration-200 group">
+                <button 
+                  onClick={() => handleSocialLogin('Google')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center space-x-2 px-4 py-3 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <Chrome className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
                   <span className="text-slate-300 group-hover:text-white transition-colors font-medium">Google</span>
                 </button>
-                <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all duration-200 group">
+                <button 
+                  onClick={() => handleSocialLogin('Apple')}
+                  disabled={isLoading}
+                  className="flex items-center justify-center space-x-2 px-4 py-3 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <svg className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
                   </svg>
@@ -203,7 +307,10 @@ export default function TradingLoginPage() {
               {/* Sign Up Link */}
               <p className="text-center text-slate-400 text-sm">
                 Don't have an account?{' '}
-                <button className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
+                <button 
+                  onClick={() => window.location.href = '/register'}
+                  className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
+                >
                   Sign up for free
                 </button>
               </p>
