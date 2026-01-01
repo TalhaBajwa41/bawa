@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '@/lib/db';
-import Deposit from '@/models/Deposit';
-import User from '@/models/User';
+import Deposit from '@/app/models/deposit';
+import User from '@/app/models/user';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
