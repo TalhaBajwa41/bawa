@@ -1,68 +1,65 @@
+// app/models/User.js
 import mongoose from 'mongoose';
 
-const UserSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, 'Please provide a name'],
-      trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [50, 'Name cannot exceed 50 characters']
+const UserSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    minlength: [2, 'Name must be at least 2 characters long']
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email']
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters long'],
+    select: false // Don't return password by default in queries
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  profileImage: {
+    type: String,
+    default: null
+  },
+  portfolio: {
+    balance: {
+      type: Number,
+      default: 0
     },
-    email: {
-      type: String,
-      required: [true, 'Please provide an email'],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email address'
-      ]
+    totalDeposits: {
+      type: Number,
+      default: 0
     },
-    password: {
-      type: String,
-      required: [true, 'Please provide a password'],
-      minlength: [6, 'Password must be at least 6 characters'],
-      select: false // Don't include password in queries by default
-    },
-    role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user'
-    },
-    isVerified: {
-      type: Boolean,
-      default: false
-    },
-    profileImage: {
-      type: String,
-      default: null
-    },
-    portfolio: {
-      totalValue: {
-        type: Number,
-        default: 0
-      },
-      holdings: [{
-        symbol: String,
-        shares: Number,
-        averagePrice: Number,
-        currentPrice: Number
-      }]
-    },
-    lastLogin: {
-      type: Date,
-      default: null
+    totalWithdrawals: {
+      type: Number,
+      default: 0
     }
   },
-  { 
-    timestamps: true // Adds createdAt and updatedAt fields
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-);
+}, {
+  timestamps: true
+});
 
-// Index for faster email lookups
-UserSchema.index({ email: 1 });
-
-// Export model (check if already exists to prevent recompilation errors)
+// Prevent model recompilation in development
 export default mongoose.models.User || mongoose.model('User', UserSchema);
