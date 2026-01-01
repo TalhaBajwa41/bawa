@@ -1,6 +1,7 @@
 // app/api/deposit/route.js
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import Deposit from '/src/app/models/Deposit';
 import User from '/src/app/models/User';
@@ -20,7 +21,12 @@ export async function POST(req) {
     await connectDB();
 
     // Get token from cookie
-    const token = req.cookies.get('token')?.value;
+    const token = req.cookies.get('authToken')?.value;
+
+    console.log('🔍 Debug - Cookie check:', {
+      hasCookie: !!token,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'none'
+    });
 
     if (!token) {
       return NextResponse.json(
@@ -36,13 +42,26 @@ export async function POST(req) {
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
+      console.log('✅ Token verified:', { userId: decoded.userId });
     } catch (error) {
+      console.error('❌ Token verification failed:', error.message);
       return NextResponse.json(
         { 
           success: false,
           message: 'Invalid token' 
         },
         { status: 401 }
+      );
+    }
+
+    // Validate userId is valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(decoded.userId)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Invalid user ID' 
+        },
+        { status: 400 }
       );
     }
 
@@ -111,6 +130,24 @@ export async function POST(req) {
       );
     }
 
+    // Sanitize transaction ID
+    const sanitizedTransactionId = transactionId.trim().replace(/[^\w\s-]/gi, '');
+
+    // Check for duplicate transaction ID
+    const existingDeposit = await Deposit.findOne({ 
+      transactionId: sanitizedTransactionId 
+    });
+
+    if (existingDeposit) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'This transaction ID has already been used' 
+        },
+        { status: 400 }
+      );
+    }
+
     // Convert screenshot to base64
     const screenshotBase64 = await fileToBase64(screenshot);
 
@@ -131,7 +168,7 @@ export async function POST(req) {
       userId: decoded.userId,
       amount: depositAmount,
       paymentMethod: paymentMethod || 'jazzcash',
-      transactionId: transactionId.trim(),
+      transactionId: sanitizedTransactionId,
       screenshot: screenshotBase64,
       status: 'pending'
     });
@@ -170,7 +207,7 @@ export async function POST(req) {
       { 
         success: false, 
         message: 'Failed to submit deposit request',
-        error: error.message 
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
       },
       { status: 500 }
     );
@@ -183,7 +220,7 @@ export async function GET(req) {
     await connectDB();
 
     // Get token from cookie
-    const token = req.cookies.get('token')?.value;
+    const token = req.cookies.get('authToken')?.value;
 
     if (!token) {
       return NextResponse.json(
@@ -206,6 +243,17 @@ export async function GET(req) {
           message: 'Invalid token' 
         },
         { status: 401 }
+      );
+    }
+
+    // Validate userId is valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(decoded.userId)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Invalid user ID' 
+        },
+        { status: 400 }
       );
     }
 
@@ -240,7 +288,7 @@ export async function GET(req) {
 
     // Calculate total amounts by status
     const totals = await Deposit.aggregate([
-      { $match: { userId: decoded.userId } },
+      { $match: { userId: new mongoose.Types.ObjectId(decoded.userId) } },
       {
         $group: {
           _id: '$status',
@@ -294,7 +342,7 @@ export async function GET(req) {
       { 
         success: false, 
         message: 'Failed to retrieve deposit history',
-        error: error.message 
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
       },
       { status: 500 }
     );

@@ -1,3 +1,4 @@
+// app/api/login/route.js
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -105,7 +106,7 @@ export async function POST(req) {
     response.cookies.set('authToken', token, {
       httpOnly: true, // Cannot be accessed by JavaScript (XSS protection)
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict', // CSRF protection
+      sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
       maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
       path: '/' // Available across entire site
     });
