@@ -4,8 +4,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import Deposit from '@/app/models/deposit';
-import User from '@/app/models/user';
-
+import User from '@/app/api/user';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // Helper function to convert file to base64
