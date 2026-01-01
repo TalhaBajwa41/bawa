@@ -35,7 +35,7 @@ export default function TradingAppHeader() {
   const navLinks = [
     { name: "Markets", href: "/market" },
     { name: "Trade", href: "/trade" },
-    { name: "Portfolio", href: "/portfolio" },
+    // { name: "Portfolio", href: "/portfolio" },
     { name: "Learn", href: "/learn" },
     { name: "Earn", href: "/earn" },
   ];

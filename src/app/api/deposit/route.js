@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
-import Deposit from '/src/app/models/Deposit';
+import Deposit from '@/app/models/deposit';
 import User from '/src/app/models/User';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
